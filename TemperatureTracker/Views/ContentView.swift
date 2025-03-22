@@ -1,12 +1,33 @@
 import SwiftUI
 
+// UserDefaults keys for app settings
+enum UserDefaultsKeys {
+    static let useFahrenheit = "useFahrenheit"
+    static let selectedTimeRange = "selectedTimeRange"
+}
+
 struct ContentView: View {
     @EnvironmentObject var healthKitManager: HealthKitManager
     @StateObject private var temperatureDataManager = TemperatureDataManager()
+    
+    // State properties with UserDefaults persistence
+    @AppStorage(UserDefaultsKeys.useFahrenheit) private var useFahrenheit: Bool = false
     @State private var selectedTimeRange: TimeRange = .week
-    @State private var useFahrenheit: Bool = false
     @State private var showSettings: Bool = false
     @State private var isLoading: Bool = true
+    
+    // Computed property to get the current temperature unit
+    private var temperatureUnit: TemperatureUnit {
+        return useFahrenheit ? .fahrenheit : .celsius
+    }
+    
+    // Initialize with saved time range from UserDefaults if available
+    init() {
+        if let savedTimeRangeValue = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedTimeRange),
+           let timeRange = TimeRange(rawValue: savedTimeRangeValue) {
+            _selectedTimeRange = State(initialValue: timeRange)
+        }
+    }
     
     var body: some View {
         NavigationView {
@@ -32,7 +53,10 @@ struct ContentView: View {
                 }
             }
             .navigationTitle("Temperature Tracker")
-            .navigationBarItems(trailing: settingsButton)
+            .navigationBarItems(
+                leading: temperatureUnitButton,
+                trailing: settingsButton
+            )
             .sheet(isPresented: $showSettings) {
                 SettingsView(useFahrenheit: $useFahrenheit)
             }
@@ -46,6 +70,11 @@ struct ContentView: View {
                         }
                     }
                 }
+            }
+            // Refresh data when returning from settings (in case unit changed)
+            .onChange(of: useFahrenheit) { _ in
+                // No need to reload data, just refresh UI
+                // Data is stored in Celsius and converted on-the-fly
             }
         }
     }
@@ -105,16 +134,64 @@ struct ContentView: View {
     }
     
     private var timeRangeSelector: some View {
-        Picker("Time Range", selection: $selectedTimeRange) {
-            Text("Day").tag(TimeRange.day)
-            Text("Week").tag(TimeRange.week)
-            Text("Month").tag(TimeRange.month)
+        VStack(spacing: 8) {
+            // Enhanced segmented picker with icons
+            Picker("Time Range", selection: $selectedTimeRange) {
+                ForEach(TimeRange.allCases) { timeRange in
+                    HStack {
+                        Image(systemName: timeRange.systemIcon)
+                        Text(timeRange.rawValue)
+                    }.tag(timeRange)
+                }
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .padding(.horizontal)
+            .onChange(of: selectedTimeRange) { newValue in
+                // Save selected time range to UserDefaults
+                UserDefaults.standard.set(newValue.rawValue, forKey: UserDefaultsKeys.selectedTimeRange)
+                loadData()
+            }
+            
+            // Display description of the selected time range
+            Text(selectedTimeRange.description)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .padding(.bottom, 4)
         }
-        .pickerStyle(SegmentedPickerStyle())
-        .padding(.horizontal)
-        .onChange(of: selectedTimeRange) { _ in
-            loadData()
+    }
+    
+    // Quick toggle for temperature unit in the navigation bar
+    private var temperatureUnitButton: some View {
+        Button(action: {
+            withAnimation(.spring(response: 0.3)) {
+                useFahrenheit.toggle()
+            }
+        }) {
+            HStack(spacing: 4) {
+                Image(systemName: "thermometer")
+                Text(temperatureUnit.shortName)
+                    .fontWeight(.semibold)
+                    // Add a small up/down indicator
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 10))
+                        .opacity(0.7)
+            }
+            .padding(8)
+            .background(
+                Capsule()
+                    .fill(Color.blue.opacity(0.15))
+                    .shadow(color: .blue.opacity(0.1), radius: 2, x: 0, y: 1)
+            )
+            // Add a rotation animation based on the unit
+            .rotation3DEffect(
+                useFahrenheit ? .degrees(0) : .degrees(360),
+                axis: (x: 0, y: 1, z: 0)
+            )
+            .animation(.spring(response: 0.4), value: useFahrenheit)
         }
+        .buttonStyle(PlainButtonStyle())
+        .accessibilityLabel("Toggle temperature unit")
+        .accessibilityHint("Switches between Celsius and Fahrenheit")
     }
     
     private var settingsButton: some View {
@@ -128,21 +205,11 @@ struct ContentView: View {
     private func loadData() {
         isLoading = true
         
-        // Get the date range based on selected time range
-        let endDate = Date()
-        let startDate: Date
-        
-        switch selectedTimeRange {
-        case .day:
-            startDate = Calendar.current.date(byAdding: .day, value: -1, to: endDate)!
-        case .week:
-            startDate = Calendar.current.date(byAdding: .day, value: -7, to: endDate)!
-        case .month:
-            startDate = Calendar.current.date(byAdding: .month, value: -1, to: endDate)!
-        }
+        // Get the date range using the TimeRange method
+        let dateRange = selectedTimeRange.dateRange()
         
         // Fetch temperature data from HealthKit
-        healthKitManager.fetchTemperatureData(from: startDate, to: endDate) { result in
+        healthKitManager.fetchTemperatureData(from: dateRange.start, to: dateRange.end) { result in
             DispatchQueue.main.async {
                 isLoading = false
                 

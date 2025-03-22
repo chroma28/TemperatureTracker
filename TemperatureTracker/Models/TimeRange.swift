@@ -1,9 +1,12 @@
 import Foundation
 
-enum TimeRange: String, CaseIterable {
+enum TimeRange: String, CaseIterable, Identifiable {
     case day = "Day"
     case week = "Week"
     case month = "Month"
+    
+    // Identifiable conformance
+    var id: String { self.rawValue }
     
     var description: String {
         switch self {
@@ -13,6 +16,17 @@ enum TimeRange: String, CaseIterable {
             return "Last 7 Days"
         case .month:
             return "Last 30 Days"
+        }
+    }
+    
+    var systemIcon: String {
+        switch self {
+        case .day:
+            return "clock"
+        case .week:
+            return "calendar.day.timeline.left"
+        case .month:
+            return "calendar"
         }
     }
     
@@ -30,5 +44,21 @@ enum TimeRange: String, CaseIterable {
         }
         
         return (start, endDate)
+    }
+    
+    // Format a date to represent this time range in UI
+    func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        
+        switch self {
+        case .day:
+            formatter.dateFormat = "h:mm a"
+        case .week:
+            formatter.dateFormat = "E"  // Day of week
+        case .month:
+            formatter.dateFormat = "MMM d"  // Month and day
+        }
+        
+        return formatter.string(from: date)
     }
 }
