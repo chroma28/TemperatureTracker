@@ -1,61 +1,47 @@
-# Temperature Tracker iOS App
+# Temperature Tracker
 
-An iOS application that reads temperature data from Apple Watch and displays it graphically on iPhone.
+An iOS app that reads temperature data from Apple Watch and displays it graphically on iPhone.
 
 ## Features
 
-- Integration with HealthKit to access body temperature data from Apple Watch
-- Interactive temperature graphs with time-based filtering (day, week, month)
-- Temperature unit conversion (Celsius/Fahrenheit)
-- Statistics display (min, max, average temperature)
-- Clean and modern SwiftUI interface
-
-## Project Structure
-
-```
-TemperatureTracker/
-├── TemperatureTracker.xcodeproj/
-│   └── project.pbxproj
-├── TemperatureTracker/
-│   ├── TemperatureTrackerApp.swift (Main app entry point)
-│   ├── Views/
-│   │   ├── ContentView.swift (Main container view)
-│   │   ├── TemperatureChartView.swift (Graph visualization)
-│   │   ├── EmptyStateView.swift (Shown when no data available)
-│   │   ├── ErrorView.swift (Error handling UI)
-│   │   └── SettingsView.swift (User preferences)
-│   ├── Models/
-│   │   ├── TemperatureData.swift (Core data model)
-│   │   └── TimeRange.swift (Time filtering options)
-│   ├── Services/
-│   │   ├── HealthKitManager.swift (HealthKit integration)
-│   │   └── TemperatureDataManager.swift (Data processing)
-│   └── Utilities/
-│       ├── DateExtensions.swift (Date formatting helpers)
-│       └── TemperatureFormatter.swift (Temperature display utilities)
-```
+- Connects to HealthKit to fetch body temperature data from Apple Watch
+- Visualizes temperature data in an interactive chart
+- Filters data by different time ranges (day, week, month)
+- Supports both Celsius and Fahrenheit temperature units
+- Provides statistical information (minimum, maximum, average temperature)
+- Clean, user-friendly interface with proper error handling
 
 ## Requirements
 
-- iOS 15.0+
-- Xcode 13.0+
-- Apple Watch with temperature sensing capability paired with iPhone
+- iOS 16.0+ / watchOS 9.0+
+- Xcode 14.0+
+- Swift 5.7+
+- Apple Watch with temperature sensing capabilities
 
-## Development Process
+## Getting Started
 
-1. Initialize the project
-2. Set up HealthKit integration
-3. Implement data models and services
-4. Create UI components using SwiftUI
-5. Add temperature visualization with Charts
-6. Implement time-based filtering
-7. Add unit conversion functionality
-8. Polish UI and user experience
+1. Clone this repository
+2. Open the project in Xcode
+3. Ensure your Apple Developer account is set up with HealthKit capabilities
+4. Build and run on an iPhone connected to Apple Watch
 
-## Future Enhancements
+## Architecture
 
-- Custom temperature input for manual tracking
-- Notifications for abnormal temperature readings
-- Correlation with other health metrics
-- Data export functionality
-- Cloud backup and sync
+The app follows the MVVM (Model-View-ViewModel) architecture:
+
+- **Models**: Define data structures for temperature readings and time ranges
+- **Views**: SwiftUI views for displaying the app UI and charts
+- **Services**: Managers for HealthKit integration and temperature data processing
+- **Utilities**: Helper extensions and formatters for dates and temperatures
+
+## Privacy
+
+The app only reads body temperature data from HealthKit and does not modify or share any health data. All processing is done on-device, and no data is sent to external servers.
+
+## License
+
+[Your chosen license]
+
+## Contact
+
+[Your contact information]
